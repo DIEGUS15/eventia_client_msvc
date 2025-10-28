@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import { sequelize, testConnection } from "./src/db.js";
+import { connectRabbitMQ, closeConnection } from "./src/config/rabbitmq.js";
 import authRoutes from "./src/routes/authRoutes.js";
 import userRoutes from "./src/routes/userRoutes.js";
 import { seedRoles } from "./src/seeders/roleSeeder.js";
@@ -30,6 +31,9 @@ const startServer = async () => {
 
     await seedRoles();
 
+    // Conectar a RabbitMQ
+    await connectRabbitMQ();
+
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
     });
@@ -38,5 +42,20 @@ const startServer = async () => {
     process.exit(1);
   }
 };
+
+// Manejo de señales para cerrar conexiones gracefully
+process.on("SIGINT", async () => {
+  console.log("\nShutting down gracefully...");
+  await closeConnection();
+  await sequelize.close();
+  process.exit(0);
+});
+
+process.on("SIGTERM", async () => {
+  console.log("\nShutting down gracefully...");
+  await closeConnection();
+  await sequelize.close();
+  process.exit(0);
+});
 
 startServer();

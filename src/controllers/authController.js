@@ -1,5 +1,6 @@
 import { User, Role } from "../models/associations.js";
 import jwt from "jsonwebtoken";
+import { publishEvent } from "../config/rabbitmq.js";
 
 export const register = async (req, res) => {
   try {
@@ -41,6 +42,23 @@ export const register = async (req, res) => {
       password,
       roleId: role.id,
     });
+
+    // Publicar evento de creación de cliente (asíncrono)
+    try {
+      await publishEvent("client.created", {
+        id: newUser.id,
+        fullname: newUser.fullname,
+        telephone: newUser.telephone,
+        address: newUser.address,
+        email: newUser.email,
+        isActive: newUser.isActive,
+        role: role.name,
+        createdAt: newUser.createdAt,
+      });
+    } catch (eventError) {
+      // Loguear el error pero no fallar el registro
+      console.error("Error publishing client.created event:", eventError);
+    }
 
     res.status(201).json({
       success: true,

@@ -1,0 +1,66 @@
+services:
+  mysql-auth-db:
+    image: mysql:8.0
+    container_name: eventia_mysql_auth_dev
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: eventia_auth_db
+      MYSQL_USER: eventia_auth_user
+      MYSQL_PASSWORD: eventia_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_auth_data_dev:/var/lib/mysql
+    networks:
+      - auth-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: eventia_auth_dev
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      DB_HOST: mysql-auth-db
+      DB_PORT: 3306
+      DB_NAME: eventia_auth_db
+      DB_USER: eventia_auth_user
+      DB_PASSWORD: eventia_pass
+      JWT_SECRET: Ab12345678.
+      JWT_EXPIRES_IN: 6h
+      NODE_ENV: development
+    depends_on:
+      mysql-auth-db:
+        condition: service_healthy
+    networks:
+      - auth-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3001/",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  auth-network:
+    driver: bridge
+
+volumes:
+  mysql_auth_data_dev:
+    driver: local

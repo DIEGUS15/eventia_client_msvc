@@ -35,7 +35,7 @@ export const testConnection = async (retries = 5, delay = 5000) => {
         console.error("Error connecting to the database:", error.message);
         throw error;
       }
-      await new Promise((resolver) => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 };

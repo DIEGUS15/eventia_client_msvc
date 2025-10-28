@@ -10,9 +10,9 @@ import { checkRole } from "../middlewares/roleMiddleware.js";
 
 const router = Router();
 
-router.get("/", verifyToken, checkRole("admin"), getUsers);
+router.get("/", verifyToken, getUsers);
 
-router.post("/", verifyToken, checkRole("admin"), createUser);
+router.post("/", verifyToken, createUser);
 
 router.put("/:id", verifyToken, checkRole("admin"), updateUser);
 
